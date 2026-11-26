@@ -1,0 +1,2079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALL Trade UI — Live Multi-Bot Paper Trading Arena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #060913;
+            --bg-card: #0c1322;
+            --bg-card-hover: #101a2e;
+            --border-dim: #1a263c;
+            --border-glow: #2d3f5e;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent-green: #10b981;
+            --accent-green-glow: rgba(16, 185, 129, 0.25);
+            --accent-red: #ef4444;
+            --accent-red-glow: rgba(239, 68, 68, 0.25);
+            --accent-cyan: #06b6d4;
+            --accent-amber: #f59e0b;
+            --accent-purple: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        html, body {
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Top Header Navigation Bar (Ultra-Compact: 38px) */
+        header {
+            background: linear-gradient(180deg, #0e1628 0%, #080d19 100%);
+            border-bottom: 1px solid var(--border-dim);
+            padding: 2px 10px;
+            height: 38px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .brand-logo {
+            background: linear-gradient(135deg, #06b6d4, #3b82f6);
+            color: #fff;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .brand-title {
+            font-size: 12.5px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            background: linear-gradient(90deg, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            white-space: nowrap;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+            border: 1px solid var(--border-dim);
+            background: rgba(15, 23, 42, 0.6);
+            white-space: nowrap;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--accent-green);
+            box-shadow: 0 0 6px var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        /* Controls Section */
+        .controls-section {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            position: relative;
+        }
+
+        /* Common Wallet Control */
+        .wallet-control-box {
+            display: flex;
+            align-items: center;
+            background: #080f1d;
+            border: 1px solid var(--border-dim);
+            border-radius: 5px;
+            padding: 2px 5px;
+            gap: 4px;
+        }
+
+        .wallet-control-box label {
+            font-size: 9.5px;
+            font-weight: 600;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .wallet-input {
+            background: #050811;
+            border: 1px solid var(--border-dim);
+            color: var(--accent-green);
+            font-size: 11px;
+            font-weight: 700;
+            width: 80px;
+            padding: 1px 4px;
+            border-radius: 3px;
+            text-align: right;
+            outline: none;
+        }
+
+        .wallet-input:focus {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 6px var(--accent-green-glow);
+        }
+
+        .btn-update-wallet {
+            background: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 9.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-update-wallet:hover {
+            background: #334155;
+            color: #fff;
+        }
+
+        /* Master Start / Stop All Bots Button */
+        .btn-toggle-all {
+            background: #080f1d;
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+
+        .btn-toggle-all:hover {
+            background: rgba(16, 185, 129, 0.15);
+        }
+
+        .btn-toggle-all.stopped {
+            border-color: #64748b;
+            color: #94a3b8;
+        }
+
+        /* Mode Selector Box (Live vs Practice Replay) */
+        .mode-selector-box {
+            display: flex;
+            align-items: center;
+            background: #080f1d;
+            border: 1px solid var(--border-dim);
+            border-radius: 5px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .btn-mode-tab {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 9.5px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-mode-tab.active {
+            background: #1e293b;
+            color: #fff;
+        }
+
+        .btn-mode-tab.live-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-mode-tab.replay-active {
+            background: rgba(6, 182, 212, 0.2);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(6, 182, 212, 0.4);
+        }
+
+        /* Replay Dropdown Panel */
+        #replay-dropdown-panel {
+            display: none;
+            position: absolute;
+            top: 38px;
+            right: 130px;
+            background: #0d1527;
+            border: 1px solid var(--accent-cyan);
+            border-radius: 6px;
+            padding: 8px 10px;
+            z-index: 300;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.9);
+            width: 250px;
+        }
+
+        .date-input {
+            background: #050811;
+            border: 1px solid var(--border-dim);
+            color: #fff;
+            font-size: 9.5px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            width: 100%;
+            outline: none;
+        }
+
+        /* Bot Selector Dropdown */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-btn {
+            background: #080f1d;
+            color: #e2e8f0;
+            border: 1px solid var(--border-dim);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .dropdown-btn:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 4px;
+            background: #0d1527;
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            padding: 5px;
+            min-width: 190px;
+            z-index: 200;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.85);
+        }
+
+        .dropdown.open .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10.5px;
+        }
+
+        .dropdown-item:hover {
+            background: #1e293b;
+        }
+
+        .dropdown-item input[type="checkbox"] {
+            accent-color: var(--accent-cyan);
+            cursor: pointer;
+        }
+
+        /* Master Kill Switch */
+        .btn-kill-all {
+            background: linear-gradient(135deg, #dc2626, #991b1b);
+            color: #ffffff;
+            border: 1px solid #ef4444;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            white-space: nowrap;
+            box-shadow: 0 0 6px var(--accent-red-glow);
+        }
+
+        .btn-kill-all:hover {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+        }
+
+        /* Live Clock */
+        .clock-box {
+            background: #050811;
+            border: 1px solid var(--border-glow);
+            border-radius: 5px;
+            padding: 2px 7px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .clock-label {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+
+        .clock-time {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        /* Market Ticker Bar (Ultra-Compact: 22px) */
+        .market-ticker-bar {
+            background: #070d18;
+            border-bottom: 1px solid var(--border-dim);
+            padding: 1px 10px;
+            height: 22px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 9.5px;
+        }
+
+        .ticker-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .ticker-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .ticker-label {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .ticker-val {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* Main Bots Display Grid (3x2 when ON <= 6, 4x2 when ON > 6 - Only ON Bots Occupy Space) */
+        main {
+            padding: 4px 6px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .grid-bots {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-rows: repeat(2, minmax(0, 1fr));
+            gap: 6px;
+            height: 100%;
+            min-height: 0;
+        }
+
+        .grid-bots.layout-3x2 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-rows: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-bots.layout-4x2 {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-rows: repeat(2, minmax(0, 1fr));
+        }
+
+        .no-bots-empty {
+            grid-column: 1 / -1;
+            grid-row: 1 / -1;
+            background: rgba(12, 19, 34, 0.45);
+            border: 1px dashed var(--border-glow);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 100%;
+            min-height: 0;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 20px;
+        }
+
+        .bot-slot-index {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--text-muted);
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--border-dim);
+            border-radius: 3px;
+            padding: 0 4px;
+            flex-shrink: 0;
+        }
+
+        /* Bot Card */
+        .bot-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 7px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            transition: border-color 0.15s, opacity 0.2s;
+            height: 100%;
+            min-height: 0;
+        }
+
+        .bot-card:hover {
+            border-color: var(--border-glow);
+        }
+
+        .bot-card.disabled {
+            opacity: 0.45;
+            filter: grayscale(0.6);
+            border-color: #1a2233;
+        }
+
+        /* Card Header */
+        .card-header {
+            padding: 2px 6px;
+            background: rgba(15, 23, 42, 0.7);
+            border-bottom: 1px solid var(--border-dim);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+            flex-shrink: 0;
+            height: 26px;
+        }
+
+        .bot-identity {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .bot-name-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            overflow: hidden;
+        }
+
+        .bot-title {
+            font-size: 11px;
+            font-weight: 800;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bot-badge {
+            font-size: 8px;
+            font-weight: 700;
+            padding: 1px 4px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+        }
+
+        .badge-scanning {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+
+        .badge-trade {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            animation: pulse 1.5s infinite;
+        }
+
+        .badge-lock {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-amber);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .badge-killed {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .badge-stopped {
+            background: rgba(148, 163, 184, 0.15);
+            color: var(--text-muted);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .btn-bot-restart {
+            background: rgba(6, 182, 212, 0.14);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(6, 182, 212, 0.35);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 8.5px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn-bot-restart:hover {
+            background: var(--accent-cyan);
+            color: #020617;
+        }
+
+        .btn-bot-kill {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 8.5px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn-bot-kill:hover {
+            background: var(--accent-red);
+            color: #fff;
+        }
+
+        /* Toggle Checkbox Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 26px;
+            height: 15px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            transition: .2s;
+            border-radius: 15px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 9px;
+            width: 9px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-cyan);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(11px);
+        }
+
+        /* Card Body */
+        .card-body {
+            padding: 4px 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        /* P/L Hero Row */
+        .pnl-hero-row {
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            background: #080e1b;
+            border: 1px solid var(--border-dim);
+            border-radius: 5px;
+            padding: 3px 5px;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .pnl-box {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .pnl-box.current-trade {
+            flex: 1.1;
+        }
+
+        .pnl-box.day-total {
+            flex: 1;
+            text-align: right;
+            border-left: 1px solid var(--border-dim);
+            padding-left: 4px;
+        }
+
+        .pnl-label {
+            font-size: 7.5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-muted);
+        }
+
+        .pnl-amount {
+            font-size: 13.5px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pnl-sub {
+            font-size: 8px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .val-positive { color: var(--accent-green); }
+        .val-negative { color: var(--accent-red); }
+        .val-neutral { color: var(--text-muted); }
+
+        /* Active Position Box */
+        .position-box {
+            background: #091022;
+            border: 1px solid var(--border-dim);
+            border-radius: 5px;
+            padding: 3px 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+
+        .position-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .strike-pill {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 9.5px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .strike-pill.ce { border-left: 2px solid var(--accent-green); }
+        .strike-pill.pe { border-left: 2px solid var(--accent-red); }
+
+        .qty-tag {
+            font-size: 8.5px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2px;
+            background: #050812;
+            padding: 2px;
+            border-radius: 3px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            text-align: center;
+        }
+
+        .metric-cell {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-title {
+            font-size: 7px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .metric-val {
+            font-size: 9px;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+
+        /* Ladder Progress Bar */
+        .ladder-track {
+            position: relative;
+            height: 3px;
+            background: #1e293b;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 1px;
+        }
+
+        .ladder-fill {
+            position: absolute;
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, var(--accent-green));
+            border-radius: 2px;
+            transition: width 0.2s ease;
+        }
+
+        /* Radar Planning Box */
+        .radar-box {
+            background: #070c18;
+            border: 1px dashed #26354a;
+            border-radius: 5px;
+            padding: 3px 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+
+        .radar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .radar-title {
+            font-size: 8.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--accent-cyan);
+        }
+
+        .radar-status {
+            font-size: 7.5px;
+            font-weight: 600;
+            padding: 1px 3px;
+            border-radius: 3px;
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--accent-cyan);
+            white-space: nowrap;
+        }
+
+        .radar-subhead {
+            font-size: 9px;
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .checklist-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px 3px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 8px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .check-icon {
+            font-size: 7.5px;
+            font-weight: 800;
+        }
+
+        .check-met { color: var(--accent-green); }
+        .check-unmet { color: #64748b; }
+
+        .radar-notes {
+            font-size: 7.5px;
+            color: #94a3b8;
+            font-style: italic;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            padding-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Trades Drawer */
+        .trades-history-drawer {
+            border-top: 1px solid var(--border-dim);
+            padding-top: 2px;
+            margin-top: auto;
+            flex-shrink: 0;
+        }
+
+        .drawer-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 1px 0;
+        }
+
+        .drawer-toggle:hover {
+            color: #fff;
+        }
+
+        .drawer-content {
+            max-height: 58px;
+            overflow-y: auto;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            margin-top: 2px;
+        }
+
+        .drawer-content.replay-expanded {
+            max-height: 120px;
+        }
+
+        .mini-trades-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8px;
+        }
+
+        .mini-trades-table th {
+            text-align: left;
+            padding: 1px 2px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-dim);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            background: #0c1322;
+        }
+
+        .mini-trades-table td {
+            padding: 1px 2px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            white-space: nowrap;
+        }
+
+        .mini-trades-table td:last-child {
+            max-width: 65px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Toast notification */
+        #toast {
+            position: fixed;
+            bottom: 14px;
+            right: 14px;
+            background: #0f172a;
+            border: 1px solid var(--accent-cyan);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 5px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            font-size: 11px;
+            font-weight: 600;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="header-container">
+            <div class="brand-section">
+                <div class="brand-logo mono">⚡ ALL TRADE</div>
+                <h1 class="brand-title">Multi-Bot Arena</h1>
+                <div class="status-pill mono" id="market-status-pill">
+                    <span class="status-dot"></span>
+                    <span id="market-status-text">INITIALIZING</span>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <!-- Common Starting Wallet Input -->
+                <div class="wallet-control-box">
+                    <label>Starting Wallet:</label>
+                    <span class="mono" style="color: var(--text-muted); font-size: 10px;">₹</span>
+                    <input type="number" id="common-wallet-input" class="wallet-input mono" value="50000" step="1000">
+                    <button class="btn-update-wallet" onclick="updateCommonWallet()">Set Wallet</button>
+                </div>
+
+                <!-- Master Start/Stop All Bots Toggle -->
+                <button class="btn-toggle-all mono" id="btn-toggle-all-bots" onclick="toggleAllBots()">
+                    ⏹ Stop All
+                </button>
+
+                <!-- Restart / Reset Today's Bots -->
+                <button class="btn-toggle-all mono" id="btn-reset-bots" onclick="resetAllBots()" title="Reset all bots back to fresh starting wallet & 0 trades" style="border-color: var(--accent-cyan); color: var(--accent-cyan);">
+                    🔄 Restart
+                </button>
+
+                <!-- Live vs Practice Replay Mode Selector -->
+                <div class="mode-selector-box">
+                    <button id="btn-mode-live" class="btn-mode-tab live-active" onclick="switchToLiveMode()">● Live</button>
+                    <button id="btn-mode-replay" class="btn-mode-tab" onclick="toggleReplayDropdown()">▶ Replay ▾</button>
+                </div>
+
+                <!-- Replay Date Dropdown Panel -->
+                <div id="replay-dropdown-panel">
+                    <div style="font-size: 9.5px; font-weight: 800; color: var(--accent-cyan); margin-bottom: 5px;">TEST TRADE REPLAY (UPSTOX 1M)</div>
+                    <div style="display: flex; gap: 5px; margin-bottom: 6px;">
+                        <div style="flex: 1;">
+                            <div style="font-size: 8px; color: var(--text-muted); margin-bottom: 2px;">From Date</div>
+                            <input type="date" id="replay-from-date" class="date-input mono" value="2026-11-20">
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 8px; color: var(--text-muted); margin-bottom: 2px;">To Date</div>
+                            <input type="date" id="replay-to-date" class="date-input mono" value="2026-11-23">
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px;">
+                        <button onclick="startPracticeReplay()" style="background: var(--accent-cyan); color: #020617; border: none; font-weight: 800; font-size: 9px; padding: 3px 8px; border-radius: 3px; cursor: pointer;">Run Replay</button>
+                        <button onclick="switchToLiveMode()" style="background: #1e293b; color: #cbd5e1; border: 1px solid #334155; font-size: 8.5px; padding: 3px 6px; border-radius: 3px; cursor: pointer;">Exit to Live</button>
+                    </div>
+                </div>
+
+                <!-- Bot Selector Dropdown (Dynamically synced from backend bots) -->
+                <div class="dropdown" id="botDropdown">
+                    <button class="dropdown-btn" onclick="toggleDropdown()">
+                        <span id="dropdown-status-label">🤖 Active Bots (0/0)</span>
+                        <span style="font-size: 8px;">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="bot-dropdown-menu"></div>
+                </div>
+
+                <!-- Emergency Kill Switch (All Bots) -->
+                <button class="btn-kill-all mono" onclick="killAllBots()">
+                    🛑 KILL ALL
+                </button>
+
+                <!-- Live Clock -->
+                <div class="clock-box">
+                    <span class="clock-label">IST</span>
+                    <span class="clock-time mono" id="live-clock">00:00:00.000</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Market Strip -->
+    <div class="market-ticker-bar">
+        <div class="ticker-group">
+            <div class="ticker-item">
+                <span class="ticker-label">NIFTY 50:</span>
+                <span class="ticker-val mono" id="spot-price">25,350.00</span>
+            </div>
+            <div class="ticker-item">
+                <span class="ticker-label">INDIA VIX:</span>
+                <span class="ticker-val mono" id="vix-price">17.70</span>
+            </div>
+            <div class="ticker-item">
+                <span class="ticker-label">5m SuperTrend:</span>
+                <span class="ticker-val mono" id="st-trend" style="color: var(--accent-green);">BULLISH</span>
+            </div>
+            <div class="ticker-item">
+                <span class="ticker-label">VWAP:</span>
+                <span class="ticker-val mono" id="vwap-price">25,342.10</span>
+            </div>
+            <div class="ticker-item">
+                <span class="ticker-label">EXPIRY:</span>
+                <span class="ticker-val mono" style="color: var(--accent-cyan);" id="active-expiry-display">--</span>
+            </div>
+        </div>
+        <div class="ticker-group">
+            <span class="ticker-label">Mode:</span>
+            <span class="ticker-val mono" style="color: var(--accent-cyan);" id="token-status">Live Upstox Stream (ASAP)</span>
+        </div>
+    </div>
+
+    <!-- Main Bots Display Grid -->
+    <main>
+        <div class="grid-bots" id="bots-grid">
+            <!-- Populated once by initBotsGrid() -->
+        </div>
+    </main>
+
+    <!-- Toast Popup -->
+    <div id="toast">Action Executed</div>
+
+    <script>
+        // High-resolution clock ticker
+        let serverTimeOffset = 0;
+        function updateClock() {
+            const now = new Date(Date.now() + serverTimeOffset);
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const ms = String(now.getMilliseconds()).padStart(3, '0');
+            document.getElementById('live-clock').textContent = `${hours}:${minutes}:${seconds}.${ms}`;
+            requestAnimationFrame(updateClock);
+        }
+        requestAnimationFrame(updateClock);
+
+        // Dropdown toggle
+        function toggleDropdown() {
+            document.getElementById('botDropdown').classList.toggle('open');
+        }
+
+        // Replay Dropdown Toggle
+        function toggleReplayDropdown() {
+            const panel = document.getElementById('replay-dropdown-panel');
+            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.closest('#botDropdown')) {
+                document.getElementById('botDropdown').classList.remove('open');
+            }
+            if (!event.target.closest('#replay-dropdown-panel') && !event.target.closest('#btn-mode-replay')) {
+                document.getElementById('replay-dropdown-panel').style.display = 'none';
+            }
+        };
+
+        // Toast helper
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.display = 'block';
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => { t.style.display = 'none'; }, 2800);
+        }
+
+        // State Tracking
+        let isInitialized = false;
+        let isWalletEditing = false;
+        let isSavingWallet = false;
+        let allBotsEnabled = true;
+        let latestBotsMap = {};
+        let lastDropdownSignature = '';
+        let lastReplayCompletedRunId = 0;
+        const openDrawers = {};
+        const lastTradeHistoryCounts = {};
+
+        // Wallet Input Event Listeners
+        const walletInput = document.getElementById('common-wallet-input');
+        walletInput.addEventListener('focus', () => { isWalletEditing = true; });
+        walletInput.addEventListener('input', () => { isWalletEditing = true; });
+        walletInput.addEventListener('blur', () => { 
+            setTimeout(() => { if (!isSavingWallet) isWalletEditing = false; }, 600); 
+        });
+        walletInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                updateCommonWallet();
+            }
+        });
+
+        // Common Wallet Update
+        function updateCommonWallet() {
+            const val = parseFloat(walletInput.value);
+            if (isNaN(val) || val <= 0) {
+                showToast('Please enter a valid wallet amount (e.g. 50000)');
+                return;
+            }
+            isSavingWallet = true;
+            isWalletEditing = true;
+
+            const btn = document.querySelector('.btn-update-wallet');
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+
+            // Optimistic instant feedback
+            walletInput.value = val;
+
+            fetch('/api/set_wallet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: val })
+            })
+            .then(r => r.json())
+            .then(data => {
+                showToast(`Starting wallet updated to ₹${val.toLocaleString('en-IN')}`);
+                pollState();
+            })
+            .catch(err => {
+                showToast('Error setting wallet: ' + err.message);
+            })
+            .finally(() => {
+                btn.textContent = 'Set Wallet';
+                btn.disabled = false;
+                setTimeout(() => {
+                    isSavingWallet = false;
+                    isWalletEditing = false;
+                }, 500);
+            });
+        }
+
+        // Master Start/Stop All Bots Toggle
+        function toggleAllBots() {
+            allBotsEnabled = !allBotsEnabled;
+            const btn = document.getElementById('btn-toggle-all-bots');
+            btn.textContent = allBotsEnabled ? '⏹ Stop All' : '⚡ Start All';
+            btn.className = `btn-toggle-all mono ${allBotsEnabled ? '' : 'stopped'}`;
+
+            // Optimistically update all known bots & re-layout grid
+            const botIds = Object.keys(latestBotsMap);
+            for (const id of botIds) {
+                latestBotsMap[id].enabled = allBotsEnabled;
+                const chk = document.getElementById(`chk-${id}`);
+                if (chk) chk.checked = allBotsEnabled;
+            }
+            const total = botIds.length;
+            const onCount = allBotsEnabled ? total : 0;
+            document.getElementById('dropdown-status-label').textContent = `🤖 Active Bots (${onCount}/${total})`;
+            syncBotsGrid(latestBotsMap);
+
+            fetch('/api/toggle_all_bots', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: allBotsEnabled })
+            })
+            .then(r => r.json())
+            .then(data => {
+                showToast(allBotsEnabled ? `All ${total} Bots Started` : `All ${total} Bots Stopped`);
+                pollState();
+            })
+            .catch(err => {
+                showToast('Error toggling bots: ' + err.message);
+            });
+        }
+
+        // Restart / Reset All Bots to Fresh Daily State
+        function resetAllBots() {
+            fetch('/api/reset_bots', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            })
+            .then(r => r.json())
+            .then(data => {
+                lastReplayCompletedRunId = 0;
+                showToast(`Restarted all ${data.reset_count || 5} bots cleanly`);
+                pollState();
+            })
+            .catch(err => {
+                showToast('Restart failed: ' + err.message);
+            });
+        }
+
+        // Bot Power Toggle ON/OFF (OFF terminates script & hides card cleanly without occupying space)
+        function toggleBotPower(botId, isEnabled) {
+            if (latestBotsMap[botId]) {
+                latestBotsMap[botId].enabled = isEnabled;
+            }
+            const chk = document.getElementById(`chk-${botId}`);
+            if (chk) chk.checked = isEnabled;
+            const sw = document.getElementById(`power-switch-${botId}`);
+            if (sw) sw.checked = isEnabled;
+            syncBotsGrid(latestBotsMap);
+
+            fetch('/api/toggle_bot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bot_id: botId, enabled: isEnabled })
+            })
+            .then(r => r.json())
+            .then(data => {
+                showToast(`${botId.replace(/_/g, ' ').toUpperCase()}: ${data.enabled ? 'POWERED ON' : 'STOPPED (HIDDEN)'}`);
+                pollState();
+            })
+            .catch(err => {
+                showToast('Toggle error: ' + err.message);
+            });
+        }
+
+        // Mode Switching: Switch to Live Mode
+        function switchToLiveMode() {
+            document.getElementById('replay-dropdown-panel').style.display = 'none';
+            document.getElementById('btn-mode-live').className = 'btn-mode-tab live-active';
+            document.getElementById('btn-mode-replay').className = 'btn-mode-tab';
+            document.getElementById('token-status').textContent = 'Live Upstox Stream (ASAP)';
+            lastReplayCompletedRunId = 0;
+
+            fetch('/api/stop_replay', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                for (const id of Object.keys(openDrawers)) {
+                    openDrawers[id] = false;
+                    const c = document.getElementById(`drawer-content-${id}`);
+                    const a = document.getElementById(`drawer-arrow-${id}`);
+                    if (c) { c.style.display = 'none'; c.classList.remove('replay-expanded'); }
+                    if (a) a.textContent = '▼';
+                    lastTradeHistoryCounts[id] = -1;
+                }
+                showToast('Restored Live Upstox Stream & Today’s Live Bots');
+                pollState();
+            });
+        }
+
+        // Start Custom Date Range Time-Lapse Practice Replay
+        function startPracticeReplay() {
+            const fromDate = document.getElementById('replay-from-date').value;
+            const toDate = document.getElementById('replay-to-date').value;
+            if (!fromDate || !toDate) {
+                showToast('Please select valid From and To dates');
+                return;
+            }
+            if (fromDate > toDate) {
+                showToast('From Date cannot be later than To Date');
+                return;
+            }
+
+            showToast(`Loading time-lapse replay for ${fromDate} to ${toDate}...`);
+            document.getElementById('replay-dropdown-panel').style.display = 'none';
+            lastReplayCompletedRunId = 0;
+
+            fetch('/api/start_replay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ from_date: fromDate, to_date: toDate })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    document.getElementById('btn-mode-live').className = 'btn-mode-tab';
+                    document.getElementById('btn-mode-replay').className = 'btn-mode-tab replay-active';
+                    document.getElementById('token-status').textContent = `TIMELAPSE 0% (${data.candles_count} bars)`;
+                    for (const id of Object.keys(lastTradeHistoryCounts)) {
+                        openDrawers[id] = false;
+                        lastTradeHistoryCounts[id] = -1;
+                        const c = document.getElementById(`drawer-content-${id}`);
+                        if (c) { c.style.display = 'none'; c.classList.remove('replay-expanded'); }
+                        const a = document.getElementById(`drawer-arrow-${id}`);
+                        if (a) a.textContent = '▼';
+                    }
+                    showToast(`Time-Lapse Replay Started (${data.candles_count} 1m bars)`);
+                    pollState();
+                } else {
+                    showToast(`Replay Error: ${data.message || 'No data available'}`);
+                }
+            })
+            .catch(err => {
+                showToast('Failed to start replay: ' + err.message);
+            });
+        }
+
+        // Individual Bot Restart (Full reset of that bot + restart script)
+        function resetBot(botId, botName) {
+            fetch('/api/reset_bot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bot_id: botId })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    lastTradeHistoryCounts[botId] = -1;
+                    showToast(`Restarted ${botName} cleanly (fresh wallet, 0 trades)`);
+                    pollState();
+                } else {
+                    showToast(`Failed to restart ${botName}`);
+                }
+            })
+            .catch(err => {
+                showToast('Restart error: ' + err.message);
+            });
+        }
+
+        // Individual Bot Kill Switch
+        function killBot(botId, botName) {
+            if (!confirm(`Force exit and square off active positions for ${botName}?`)) return;
+            fetch('/api/kill_bot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bot_id: botId })
+            })
+            .then(r => r.json())
+            .then(data => {
+                showToast(`Kill Switch executed for ${botName}`);
+                pollState();
+            });
+        }
+
+        // Master Emergency Kill Switch
+        function killAllBots() {
+            if (!confirm("EMERGENCY KILL SWITCH: Force exit active positions across ALL bots immediately?")) return;
+            fetch('/api/kill_all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                showToast(`Emergency Kill All executed: ${data.killed_count} positions closed`);
+                pollState();
+            });
+        }
+
+        // Today's Trades Drawer Toggle (Preserves expanded state without flickering)
+        function toggleDrawer(botId) {
+            openDrawers[botId] = !openDrawers[botId];
+            const content = document.getElementById(`drawer-content-${botId}`);
+            const arrow = document.getElementById(`drawer-arrow-${botId}`);
+            if (content && arrow) {
+                content.style.display = openDrawers[botId] ? 'block' : 'none';
+                arrow.textContent = openDrawers[botId] ? '▲' : '▼';
+            }
+        }
+
+        // Helper: stable ordering of bots
+        function getOrderedBots(botsObj) {
+            const baseOrder = ['winner_51', 'bot_51_1', 'chad_25', 'chandler_runer', 'live_trading_bot', 'champion_of_50'];
+            const list = baseOrder.map(id => botsObj[id]).filter(Boolean);
+            for (const b of Object.values(botsObj)) {
+                if (!baseOrder.includes(b.id)) list.push(b);
+            }
+            return list;
+        }
+
+        // Sync header Active Bots dropdown dynamically (supports adding >5 bots cleanly)
+        function syncBotDropdown(orderedBots) {
+            const menu = document.getElementById('bot-dropdown-menu');
+            if (!menu) return;
+            const sig = orderedBots.map(b => `${b.id}:${b.name}`).join('|');
+            if (sig !== lastDropdownSignature) {
+                lastDropdownSignature = sig;
+                menu.innerHTML = orderedBots.map(b => `
+                    <label class="dropdown-item">
+                        <input type="checkbox" id="chk-${b.id}" ${b.enabled ? 'checked' : ''} onchange="toggleBotPower('${b.id}', this.checked)">
+                        <span>${b.name}</span>
+                    </label>
+                `).join('');
+            } else {
+                for (const b of orderedBots) {
+                    const chk = document.getElementById(`chk-${b.id}`);
+                    if (chk) chk.checked = b.enabled;
+                }
+            }
+        }
+
+        // Build ONE bot card DOM element (used cleanly only for ON bots)
+        function buildBotCardElement(bot, slotNumber) {
+            openDrawers[bot.id] = Boolean(openDrawers[bot.id]);
+            lastTradeHistoryCounts[bot.id] = -1;
+            const wrap = document.createElement('div');
+            wrap.className = 'bot-card';
+            wrap.id = `bot-card-${bot.id}`;
+            wrap.innerHTML = `
+                <div class="card-header">
+                    <div class="bot-identity">
+                        <div class="bot-name-row">
+                            <span class="bot-slot-index mono" id="slot-idx-${bot.id}">#${slotNumber}</span>
+                            <span class="bot-title">${bot.name}</span>
+                            <span class="bot-badge badge-scanning mono" id="badge-${bot.id}">${bot.status}</span>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-bot-restart mono" id="btn-restart-${bot.id}" onclick="resetBot('${bot.id}', '${bot.name}')" title="Restart this bot (reset wallet & trades cleanly)">
+                            🔄 RST
+                        </button>
+                        <button class="btn-bot-kill mono" onclick="killBot('${bot.id}', '${bot.name}')">
+                            🛑 KILL
+                        </button>
+                        <label class="switch" title="Turn bot ON / OFF">
+                            <input type="checkbox" id="power-switch-${bot.id}" ${bot.enabled ? 'checked' : ''} onchange="toggleBotPower('${bot.id}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="pnl-hero-row">
+                        <div class="pnl-box current-trade">
+                            <span class="pnl-label">Active P/L</span>
+                            <span class="pnl-amount mono val-neutral" id="pnl-active-val-${bot.id}">₹0.00</span>
+                            <span class="pnl-sub mono val-neutral" id="pnl-active-sub-${bot.id}">Awaiting Entry</span>
+                        </div>
+                        <div class="pnl-box day-total">
+                            <span class="pnl-label">Day P/L</span>
+                            <span class="pnl-amount mono val-positive" id="pnl-day-val-${bot.id}">₹0.00</span>
+                            <span class="pnl-sub mono" id="pnl-day-sub-${bot.id}" style="color: var(--text-muted);">₹50,000 (0W / 0L)</span>
+                        </div>
+                    </div>
+
+                    <div class="position-box" id="pos-box-${bot.id}">
+                        <div id="pos-active-${bot.id}" style="display: none;">
+                            <div class="position-header">
+                                <div style="display: flex; align-items: center; gap: 4px; min-width: 0;">
+                                    <span class="strike-pill ce mono" id="pos-strike-${bot.id}">NIFTY ATM CE</span>
+                                    <span class="mono" id="pos-expiry-${bot.id}" style="font-size: 8px; font-weight: 700; color: var(--accent-cyan); background: rgba(6,182,212,0.12); border: 1px solid rgba(6,182,212,0.3); padding: 1px 4px; border-radius: 3px; white-space: nowrap;">EXP</span>
+                                </div>
+                                <span class="qty-tag mono" id="pos-qty-${bot.id}">2L</span>
+                            </div>
+                            <div class="metrics-grid mono">
+                                <div class="metric-cell">
+                                    <span class="metric-title">Entry</span>
+                                    <span class="metric-val" id="pos-entry-${bot.id}">₹0.00</span>
+                                </div>
+                                <div class="metric-cell">
+                                    <span class="metric-title">LTP</span>
+                                    <span class="metric-val" id="pos-ltp-${bot.id}">₹0.00</span>
+                                </div>
+                                <div class="metric-cell">
+                                    <span class="metric-title">Target</span>
+                                    <span class="metric-val val-positive" id="pos-target-${bot.id}">₹0.00</span>
+                                </div>
+                                <div class="metric-cell">
+                                    <span class="metric-title">SL</span>
+                                    <span class="metric-val val-negative" id="pos-sl-${bot.id}">₹0.00</span>
+                                </div>
+                                <div class="metric-cell">
+                                    <span class="metric-title">TSL</span>
+                                    <span class="metric-val" style="color: var(--accent-amber);" id="pos-tsl-${bot.id}">₹0.00</span>
+                                </div>
+                            </div>
+                            <div class="ladder-track">
+                                <div class="ladder-fill" id="pos-progress-${bot.id}" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div id="pos-empty-${bot.id}" style="display: flex; justify-content: center; align-items: center; min-height: 40px; text-align: center;">
+                            <span style="font-size: 8.5px; color: var(--text-muted); font-weight: 600;">
+                                ⚪ NO ACTIVE POSITION — SCANNING SIGNALS
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="radar-box">
+                        <div class="radar-header">
+                            <span class="radar-title mono">📡 Option Radar</span>
+                            <span class="radar-status mono" id="radar-status-${bot.id}">SCANNING</span>
+                        </div>
+                        <div class="radar-subhead">
+                            Target: <span style="color: var(--accent-cyan);" id="radar-target-${bot.id}">NIFTY ATM</span>
+                            <span class="mono" style="font-size: 8px; color: var(--text-muted);" id="radar-metrics-${bot.id}">(Est. ₹150, Δ 0.60)</span>
+                        </div>
+                        <div class="checklist-grid" id="radar-checklist-${bot.id}"></div>
+                        <div class="radar-notes" id="radar-notes-${bot.id}">Analyzing market structure</div>
+                    </div>
+
+                    <div class="trades-history-drawer">
+                        <div class="drawer-toggle" onclick="toggleDrawer('${bot.id}')">
+                            <span id="drawer-count-${bot.id}">📋 Today's Trades (0)</span>
+                            <span id="drawer-arrow-${bot.id}">${openDrawers[bot.id] ? '▲' : '▼'}</span>
+                        </div>
+                        <div class="drawer-content" id="drawer-content-${bot.id}" style="display: ${openDrawers[bot.id] ? 'block' : 'none'};">
+                            <table class="mini-trades-table mono">
+                                <thead>
+                                    <tr>
+                                        <th>Strike</th>
+                                        <th>Time</th>
+                                        <th>Entry</th>
+                                        <th>Exit</th>
+                                        <th>P/L</th>
+                                        <th>Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="drawer-tbody-${bot.id}">
+                                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No trades executed today</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return wrap;
+        }
+
+        // Synchronize ON bots only in #bots-grid; adapt layout dynamically between 3x2 (<=6 ON) and 4x2 (>6 ON)
+        function syncBotsGrid(botsObj) {
+            const container = document.getElementById('bots-grid');
+            if (!container || !botsObj) return;
+
+            const orderedBots = getOrderedBots(botsObj);
+            syncBotDropdown(orderedBots);
+
+            const visibleBots = orderedBots.filter(b => b.enabled);
+            const visibleIds = visibleBots.map(b => b.id);
+
+            // Switch grid cleanly between 3x2 (<=6 ON) and 4x2 (>6 ON)
+            if (visibleBots.length > 8) {
+                setClassIfChanged(container, 'grid-bots layout-4x2');
+                const colStyle = `repeat(${Math.ceil(visibleBots.length / 2)}, minmax(0, 1fr))`;
+                if (container.style.gridTemplateColumns !== colStyle) container.style.gridTemplateColumns = colStyle;
+            } else if (visibleBots.length > 6) {
+                if (container.style.gridTemplateColumns) container.style.gridTemplateColumns = '';
+                setClassIfChanged(container, 'grid-bots layout-4x2');
+            } else {
+                if (container.style.gridTemplateColumns) container.style.gridTemplateColumns = '';
+                setClassIfChanged(container, 'grid-bots layout-3x2');
+            }
+
+            // Remove OFF bots or obsolete cards so they occupy ZERO space
+            for (const child of Array.from(container.children)) {
+                if (child.id === 'no-bots-empty' && visibleBots.length > 0) {
+                    child.remove();
+                } else if (child.id && child.id.startsWith('bot-card-')) {
+                    const bid = child.id.replace('bot-card-', '');
+                    if (!visibleIds.includes(bid)) {
+                        child.remove();
+                    }
+                }
+            }
+
+            if (visibleBots.length === 0) {
+                if (!document.getElementById('no-bots-empty')) {
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.className = 'no-bots-empty';
+                    emptyDiv.id = 'no-bots-empty';
+                    emptyDiv.innerHTML = `
+                        <span class="mono" style="font-size: 13px; font-weight: 800; color: var(--text-main);">ALL BOTS ARE OFF — UPSTOX DATA FEED PAUSED</span>
+                        <span style="font-size: 11px;">Turn ON any bot from the <strong>Active Bots</strong> menu above or click <strong>⚡ Start All</strong> to resume streaming.</span>
+                    `;
+                    container.appendChild(emptyDiv);
+                }
+                isInitialized = true;
+                return;
+            }
+
+            // Mount missing ON cards in exact order without recreating already-mounted ON cards
+            visibleBots.forEach((bot, idx) => {
+                let card = document.getElementById(`bot-card-${bot.id}`);
+                if (!card) {
+                    card = buildBotCardElement(bot, idx + 1);
+                }
+                const expectedRef = container.children[idx] || null;
+                if (card !== expectedRef) {
+                    container.insertBefore(card, expectedRef);
+                }
+                const slotBadge = document.getElementById(`slot-idx-${bot.id}`);
+                if (slotBadge) slotBadge.textContent = `#${idx + 1}`;
+            });
+            isInitialized = true;
+        }
+
+        // In-Place Dynamic DOM Updating (Preserves focus, active clicks, and open drawers)
+        function updateBotCard(bot) {
+            const card = document.getElementById(`bot-card-${bot.id}`);
+            if (!card) return;
+
+            // Power state sync
+            if (!bot.enabled) {
+                card.classList.add('disabled');
+            } else {
+                card.classList.remove('disabled');
+            }
+
+            const sw = document.getElementById(`power-switch-${bot.id}`);
+            if (sw && sw !== document.activeElement) sw.checked = bot.enabled;
+
+            const chk = document.getElementById(`chk-${bot.id}`);
+            if (chk) chk.checked = bot.enabled;
+
+            // Status Badge
+            const badge = document.getElementById(`badge-${bot.id}`);
+            if (badge) {
+                if (!bot.enabled) {
+                    badge.textContent = 'STOPPED';
+                    badge.className = 'bot-badge badge-stopped mono';
+                } else if (bot.status === 'IN_TRADE') {
+                    badge.textContent = 'IN TRADE';
+                    badge.className = 'bot-badge badge-trade mono';
+                } else if (bot.status === 'DAILY_LOCK') {
+                    badge.textContent = 'LOCKED';
+                    badge.className = 'bot-badge badge-lock mono';
+                } else if (bot.status === 'DAILY_LOSS_LIMIT') {
+                    badge.textContent = 'LOSS LIMIT';
+                    badge.className = 'bot-badge badge-killed mono';
+                } else if (bot.status === 'MAX_TRADES_MET') {
+                    badge.textContent = 'MAX TRDS';
+                    badge.className = 'bot-badge badge-lock mono';
+                } else if (bot.status === 'WAIT_OPEN') {
+                    badge.textContent = 'PRE-OPEN';
+                    badge.className = 'bot-badge badge-lock mono';
+                } else if (bot.status === 'WARMUP') {
+                    badge.textContent = 'WARMUP';
+                    badge.className = 'bot-badge badge-lock mono';
+                } else if (bot.status === 'KILLED') {
+                    badge.textContent = 'KILLED';
+                    badge.className = 'bot-badge badge-killed mono';
+                } else {
+                    badge.textContent = 'SCANNING';
+                    badge.className = 'bot-badge badge-scanning mono';
+                }
+            }
+
+            // P/L Elements
+            const pnlActiveVal = document.getElementById(`pnl-active-val-${bot.id}`);
+            const pnlActiveSub = document.getElementById(`pnl-active-sub-${bot.id}`);
+            const pnlDayVal = document.getElementById(`pnl-day-val-${bot.id}`);
+            const pnlDaySub = document.getElementById(`pnl-day-sub-${bot.id}`);
+
+            const t = bot.current_trade;
+            const hasTrade = t !== null && t !== undefined;
+
+            if (pnlActiveVal && pnlActiveSub) {
+                if (hasTrade) {
+                    const sign = t.current_pnl >= 0 ? '+₹' : '-₹';
+                    const colClass = t.current_pnl >= 0 ? 'val-positive' : 'val-negative';
+                    pnlActiveVal.textContent = `${sign}${Math.abs(t.current_pnl).toFixed(2)}`;
+                    pnlActiveVal.className = `pnl-amount mono ${colClass}`;
+
+                    const retSign = t.current_pnl_pct >= 0 ? '+' : '';
+                    pnlActiveSub.textContent = `${retSign}${t.current_pnl_pct.toFixed(2)}% MTM`;
+                    pnlActiveSub.className = `pnl-sub mono ${colClass}`;
+                } else {
+                    pnlActiveVal.textContent = '₹0.00';
+                    pnlActiveVal.className = 'pnl-amount mono val-neutral';
+                    const subLabels = {
+                        'DAILY_LOCK': 'Daily Profit Locked',
+                        'DAILY_LOSS_LIMIT': 'Daily Loss Limit Hit',
+                        'MAX_TRADES_MET': 'Max Daily Trades Hit',
+                        'WAIT_OPEN': 'Waiting 09:15 Open',
+                        'WARMUP': 'Opening Warmup (09:20)',
+                        'STOPPED': 'Bot Stopped',
+                        'KILLED': 'Killed Manually'
+                    };
+                    pnlActiveSub.textContent = subLabels[bot.status] || 'Awaiting Entry';
+                    pnlActiveSub.className = 'pnl-sub mono val-neutral';
+                }
+            }
+
+            if (pnlDayVal && pnlDaySub) {
+                const daySign = bot.day_pnl >= 0 ? '+₹' : '-₹';
+                const dayCol = bot.day_pnl >= 0 ? 'val-positive' : 'val-negative';
+                pnlDayVal.textContent = `${daySign}${Math.abs(bot.day_pnl).toFixed(2)}`;
+                pnlDayVal.className = `pnl-amount mono ${dayCol}`;
+                pnlDaySub.textContent = `₹${bot.wallet.toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})} (${bot.win_count}W / ${bot.loss_count}L)`;
+            }
+
+            // Position Panel
+            const posActive = document.getElementById(`pos-active-${bot.id}`);
+            const posEmpty = document.getElementById(`pos-empty-${bot.id}`);
+
+            if (hasTrade) {
+                if (posActive) posActive.style.display = 'block';
+                if (posEmpty) posEmpty.style.display = 'none';
+
+                const posStrike = document.getElementById(`pos-strike-${bot.id}`);
+                if (posStrike) {
+                    posStrike.textContent = t.strike;
+                    posStrike.className = `strike-pill ${t.kind.toLowerCase()} mono`;
+                }
+
+                const posExpiry = document.getElementById(`pos-expiry-${bot.id}`);
+                if (posExpiry) {
+                    posExpiry.textContent = t.expiry_label || t.expiry || 'WEEKLY';
+                }
+
+                const posQty = document.getElementById(`pos-qty-${bot.id}`);
+                if (posQty) posQty.textContent = `${t.lots}L (${t.qty}Q)`;
+
+                const posEntry = document.getElementById(`pos-entry-${bot.id}`);
+                if (posEntry) posEntry.textContent = `₹${t.entry_price.toFixed(1)}`;
+
+                const posLtp = document.getElementById(`pos-ltp-${bot.id}`);
+                if (posLtp) {
+                    posLtp.textContent = `₹${t.current_price.toFixed(1)}`;
+                    posLtp.className = `metric-val mono ${t.current_pnl >= 0 ? 'val-positive' : 'val-negative'}`;
+                }
+
+                const posTarget = document.getElementById(`pos-target-${bot.id}`);
+                if (posTarget) posTarget.textContent = `₹${t.target_price.toFixed(1)}`;
+
+                const posSl = document.getElementById(`pos-sl-${bot.id}`);
+                if (posSl) posSl.textContent = `₹${t.stop_loss.toFixed(1)}`;
+
+                const posTsl = document.getElementById(`pos-tsl-${bot.id}`);
+                if (posTsl) posTsl.textContent = `₹${t.trailing_sl.toFixed(1)}`;
+
+                const posProgress = document.getElementById(`pos-progress-${bot.id}`);
+                if (posProgress) {
+                    let pct = 0;
+                    if (t.target_price > t.entry_price) {
+                        pct = Math.min(100, Math.max(0, ((t.current_price - t.entry_price) / (t.target_price - t.entry_price)) * 100));
+                    }
+                    posProgress.style.width = `${pct}%`;
+                }
+            } else {
+                if (posActive) posActive.style.display = 'none';
+                if (posEmpty) posEmpty.style.display = 'flex';
+            }
+
+            // Radar
+            if (bot.radar) {
+                const rStat = document.getElementById(`radar-status-${bot.id}`);
+                if (rStat) rStat.textContent = bot.radar.status || 'SCANNING';
+
+                const rTgt = document.getElementById(`radar-target-${bot.id}`);
+                if (rTgt) {
+                    const expTxt = bot.radar.expiry_label ? ` · ${bot.radar.expiry_label}` : '';
+                    rTgt.textContent = `${bot.radar.targeted_option || 'NIFTY ATM'}${expTxt}`;
+                }
+
+                const rMet = document.getElementById(`radar-metrics-${bot.id}`);
+                if (rMet) {
+                    const prem = bot.radar.estimated_premium ? `₹${bot.radar.estimated_premium.toFixed(0)}` : '-';
+                    const delt = bot.radar.target_delta ? bot.radar.target_delta.toFixed(2) : '-';
+                    rMet.textContent = `(Est. ${prem}, Δ ${delt})`;
+                }
+
+                const rCheck = document.getElementById(`radar-checklist-${bot.id}`);
+                if (rCheck && bot.radar.checklist) {
+                    const cSig = bot.radar.checklist.map(item => `${item.name}:${item.current}:${item.met ? 1 : 0}`).join('|');
+                    if (_lastChecklistSig[bot.id] !== cSig) {
+                        _lastChecklistSig[bot.id] = cSig;
+                        rCheck.innerHTML = bot.radar.checklist.map(item => `
+                            <div class="checklist-item">
+                                <span class="check-icon ${item.met ? 'check-met' : 'check-unmet'}">${item.met ? '✓' : '○'}</span>
+                                <span>${item.name}: <strong>${item.current}</strong></span>
+                            </div>
+                        `).join('');
+                    }
+                }
+
+                const rNotes = document.getElementById(`radar-notes-${bot.id}`);
+                if (rNotes) rNotes.textContent = bot.radar.notes || '';
+            }
+
+            // Today's Trades Count & Table
+            const dCount = document.getElementById(`drawer-count-${bot.id}`);
+            if (dCount) dCount.textContent = `📋 Today's Trades (${bot.trade_count})`;
+
+            const historyLen = bot.trades_history ? bot.trades_history.length : 0;
+            if (lastTradeHistoryCounts[bot.id] !== historyLen) {
+                lastTradeHistoryCounts[bot.id] = historyLen;
+                const tbody = document.getElementById(`drawer-tbody-${bot.id}`);
+                if (tbody) {
+                    if (historyLen > 0) {
+                        tbody.innerHTML = bot.trades_history.map(th => {
+                            const pCol = th.net_pnl >= 0 ? 'val-positive' : 'val-negative';
+                            const pSign = th.net_pnl >= 0 ? '+' : '';
+                            const expTag = th.expiry_label ? th.expiry_label.slice(0, 6) : (th.expiry ? th.expiry.slice(5) : '');
+                            return `
+                                <tr>
+                                    <td>${th.strike}${expTag ? ` <span style="color: var(--accent-cyan); font-size: 7px;">[${expTag}]</span>` : ''}</td>
+                                    <td>${th.entered_at}</td>
+                                    <td>₹${th.entry_price.toFixed(1)}</td>
+                                    <td>₹${th.exit_price ? th.exit_price.toFixed(1) : '-'}</td>
+                                    <td class="${pCol}">${pSign}${th.net_pnl.toFixed(1)}</td>
+                                    <td style="color: var(--text-muted);">${th.exit_reason || '-'}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No trades executed today</td></tr>`;
+                    }
+                }
+            }
+        }
+
+        // Full State Update Dispatcher
+        const _lastDomText = new WeakMap();
+        const _lastDomClass = new WeakMap();
+        const _lastChecklistSig = {};
+        let _rafScheduled = false;
+        let _pendingUIState = null;
+
+        function setTextIfChanged(el, txt) {
+            if (!el) return;
+            const s = String(txt);
+            if (_lastDomText.get(el) !== s) {
+                _lastDomText.set(el, s);
+                el.textContent = s;
+            }
+        }
+
+        function setClassIfChanged(el, cls) {
+            if (!el) return;
+            if (_lastDomClass.get(el) !== cls) {
+                _lastDomClass.set(el, cls);
+                el.className = cls;
+            }
+        }
+
+        function scheduleUIUpdate(state) {
+            _pendingUIState = state;
+            if (_rafScheduled) return;
+            _rafScheduled = true;
+            requestAnimationFrame(() => {
+                _rafScheduled = false;
+                const latest = _pendingUIState;
+                if (latest) updateUI(latest);
+            });
+        }
+
+        function updateUI(state) {
+            if (!state) return;
+
+            // Update Market Header Strip
+            if (state.market) {
+                const m = state.market;
+                const spotEl = document.getElementById('spot-price');
+                if (spotEl && m.spot) spotEl.textContent = m.spot.toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+                const vixEl = document.getElementById('vix-price');
+                if (vixEl && m.vix) vixEl.textContent = m.vix.toFixed(2);
+
+                const statusPill = document.getElementById('market-status-pill');
+                const statusText = document.getElementById('market-status-text');
+                if (statusText) {
+                    statusText.textContent = m.simulation ? (m.status || 'REPLAY ACTIVE') : (m.status || 'NORMAL_OPEN');
+                }
+                if (statusPill) {
+                    statusPill.style.borderColor = (m.is_open || m.simulation) ? 'var(--accent-green)' : 'var(--accent-amber)';
+                }
+
+                // Update Mode tab styling
+                const liveTab = document.getElementById('btn-mode-live');
+                const replayTab = document.getElementById('btn-mode-replay');
+                if (m.simulation) {
+                    if (liveTab) liveTab.className = 'btn-mode-tab';
+                    if (replayTab) replayTab.className = 'btn-mode-tab replay-active';
+                } else {
+                    if (liveTab) liveTab.className = 'btn-mode-tab live-active';
+                    if (replayTab) replayTab.className = 'btn-mode-tab';
+                }
+
+                if (m.features) {
+                    const stTrend = document.getElementById('st-trend');
+                    if (stTrend) {
+                        if (m.features.st5m_dir === 1) {
+                            stTrend.textContent = 'BULLISH';
+                            stTrend.style.color = 'var(--accent-green)';
+                        } else {
+                            stTrend.textContent = 'BEARISH';
+                            stTrend.style.color = 'var(--accent-red)';
+                        }
+                    }
+                    const vwapEl = document.getElementById('vwap-price');
+                    if (vwapEl && m.features.vwap) {
+                        vwapEl.textContent = m.features.vwap.toFixed(2);
+                    }
+                }
+
+                const expEl = document.getElementById('active-expiry-display');
+                if (expEl && (m.expiry_label || m.active_expiry)) {
+                    const dte = m.expiry_dte ? ` (${m.expiry_dte}D)` : '';
+                    expEl.textContent = `${m.expiry_label || m.active_expiry}${dte}`;
+                }
+
+                const tokEl = document.getElementById('token-status');
+                if (tokEl) {
+                    if (m.simulation) {
+                        const simClk = m.sim_timestamp ? m.sim_timestamp.slice(5, 16).replace('T', ' ') : '';
+                        const pct = Math.round(m.replay_progress || 0);
+                        if (m.replay_completed) {
+                            tokEl.textContent = `REPLAY COMPLETE · 100% (${m.replay_total_candles || 0} bars)`;
+                            tokEl.style.color = 'var(--accent-green)';
+                        } else {
+                            tokEl.textContent = `TIMELAPSE ${pct}%${simClk ? ' · ' + simClk : ''}`;
+                            tokEl.style.color = 'var(--accent-cyan)';
+                        }
+                    } else {
+                        const src = m.feed_source || 'LIVE';
+                        const isPaused = src.startsWith('PAUSED') || src.startsWith('IDLE');
+                        const ts = (!isPaused && m.last_updated) ? m.last_updated : '';
+                        tokEl.textContent = `${src}${ts ? ' · ' + ts : ''}`;
+                        tokEl.style.color = isPaused ? 'var(--accent-amber)' : 'var(--accent-cyan)';
+                    }
+                }
+            }
+
+            // Sync Common Wallet Input only if user is NOT currently editing it
+            if (!isWalletEditing && !isSavingWallet && state.common_starting_wallet) {
+                if (walletInput && document.activeElement !== walletInput) {
+                    walletInput.value = state.common_starting_wallet;
+                }
+            }
+
+            // Dynamically render ONLY ON bots & switch layout 3x2 (<=6 ON) <-> 4x2 (>6 ON)
+            if (state.bots) {
+                latestBotsMap = state.bots;
+                syncBotsGrid(state.bots);
+
+                const m = state.market || {};
+                const replayFinishedNow = Boolean(
+                    m.simulation && m.replay_completed && (m.replay_run_id || 1) !== lastReplayCompletedRunId
+                );
+                if (!m.simulation) {
+                    lastReplayCompletedRunId = 0;
+                }
+
+                for (const bot of Object.values(state.bots)) {
+                    if (!bot.enabled) continue;
+                    if (replayFinishedNow) {
+                        openDrawers[bot.id] = true;
+                        lastTradeHistoryCounts[bot.id] = -1;
+                        const content = document.getElementById(`drawer-content-${bot.id}`);
+                        const arrow = document.getElementById(`drawer-arrow-${bot.id}`);
+                        if (content) {
+                            content.style.display = 'block';
+                            content.classList.add('replay-expanded');
+                        }
+                        if (arrow) arrow.textContent = '▲';
+                    }
+                    updateBotCard(bot);
+                }
+
+                if (replayFinishedNow) {
+                    lastReplayCompletedRunId = m.replay_run_id || 1;
+                    showToast('Replay Complete — Full Trade History Expanded in Today’s Trades');
+                }
+
+                // Update dropdown active count
+                const activeCount = Object.values(state.bots).filter(b => b.enabled).length;
+                const totalCount = Object.keys(state.bots).length;
+                const dropLabel = document.getElementById('dropdown-status-label');
+                if (dropLabel) {
+                    dropLabel.textContent = `🤖 Active Bots (${activeCount}/${totalCount})`;
+                }
+
+                // Sync master toggle button state
+                const masterBtn = document.getElementById('btn-toggle-all-bots');
+                if (masterBtn) {
+                    allBotsEnabled = (activeCount > 0);
+                    masterBtn.textContent = allBotsEnabled ? '⏹ Stop All' : '⚡ Start All';
+                    masterBtn.className = `btn-toggle-all mono ${allBotsEnabled ? '' : 'stopped'}`;
+                }
+            }
+        }
+
+        // Server-Sent Events (SSE) Live Connection (instant push, poll only on fallback)
+        let sseConnected = false;
+        function connectSSE() {
+            const evtSource = new EventSource('/api/stream');
+
+            evtSource.onopen = function() {
+                sseConnected = true;
+            };
+
+            evtSource.onmessage = function(e) {
+                sseConnected = true;
+                try {
+                    const state = JSON.parse(e.data);
+                    scheduleUIUpdate(state);
+                } catch (err) {
+                    console.error("SSE parse error", err);
+                }
+            };
+
+            evtSource.onerror = function() {
+                sseConnected = false;
+                evtSource.close();
+                setTimeout(() => {
+                    pollState();
+                    connectSSE();
+                }, 500);
+            };
+        }
+
+        // Fallback state polling ONLY when SSE is disconnected
+        function pollState() {
+            fetch('/api/state')
+                .then(r => r.json())
+                .then(state => updateUI(state))
+                .catch(err => console.warn("Polling retry: ", err));
+        }
+
+        // Initial hydration + instant SSE stream
+        pollState();
+        connectSSE();
+        setInterval(() => { if (!sseConnected) pollState(); }, 1000);
+    </script>
+</body>
+</html>

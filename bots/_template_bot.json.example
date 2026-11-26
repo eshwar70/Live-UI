@@ -1,0 +1,43 @@
+{
+  "bot_id": "custom_alpha_bot",
+  "name": "Custom Alpha Bot",
+  "family": "Custom Drop-In Strategy",
+  "enabled": true,
+  "cfg": {
+    "capital_floor": 14000.0,
+    "daily_profit_lock": 2500.0,
+    "daily_loss_limit": 3000.0,
+    "max_trades_day": 4,
+    "max_lots": 4,
+    "target_delta": 0.55,
+    "stop_fraction": 0.085,
+    "target_fraction": 0.35,
+    "trail_activation": 0.12,
+    "trail_fraction": 0.045,
+    "breakeven_activation_fraction": 0.06,
+    "breakeven_lock_fraction": 0.025,
+    "step_trail_levels": [
+      [0.09, 0.04],
+      [0.16, 0.10],
+      [0.24, 0.17]
+    ],
+    "loss_streak_pause": 2,
+    "vix_tier_low_max": 14.0,
+    "vix_tier_mid_max": 17.0,
+    "vix_tier_high_max": 18.5,
+    "vix_regimes": {
+      "low": {
+        "max_lots": 2,
+        "daily_profit_lock": 1800.0,
+        "stop_fraction": 0.075,
+        "target_fraction": 0.18
+      },
+      "mid": {
+        "max_lots": 6,
+        "daily_profit_lock": 4000.0,
+        "stop_fraction": 0.09,
+        "target_fraction": 0.45
+      }
+    }
+  }
+}

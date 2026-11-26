@@ -1,0 +1,21 @@
+# Secrets & local configuration
+.env
+.env.*
+!.env.example
+
+# Runtime state & logs
+all_trade_ui/session_state.json
+*.log
+
+# End-of-day exports & archives
+arena-*/
+arena- */
+
+# Python & macOS artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.DS_Store
+.venv/
+venv/
