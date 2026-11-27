@@ -29,7 +29,7 @@ def main():
     print("\n=======================================================")
     print("  ⚡ ALL TRADE UI — LIVE PAPER TRADING ARENA")
     print("=======================================================")
-    print("  - Built-in Bots     : Winner 51, 51.1, Chad 25, Chandler Runner, Live Trading Bot, Champion of 50")
+    print("  - Built-in Bots     : Winner 51, 51.1, Chad 25, Chandler Runner, Live Trading Bot, Champion Omega")
     print("  - Drop-in Folder    : bots/*.json (auto-loaded at startup)")
     print(f"  - Upstox Token Feed : {token_status}")
     print(f"  - Starting Wallet   : Rs {DEFAULT_INITIAL_WALLET:,.2f} (Configurable via UI)")

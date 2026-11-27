@@ -1423,7 +1423,7 @@
 
         // Helper: stable ordering of bots
         function getOrderedBots(botsObj) {
-            const baseOrder = ['winner_51', 'bot_51_1', 'chad_25', 'chandler_runer', 'live_trading_bot', 'champion_of_50'];
+            const baseOrder = ['winner_51', 'bot_51_1', 'chad_25', 'chandler_runer', 'live_trading_bot', 'champion_omega'];
             const list = baseOrder.map(id => botsObj[id]).filter(Boolean);
             for (const b of Object.values(botsObj)) {
                 if (!baseOrder.includes(b.id)) list.push(b);

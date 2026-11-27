@@ -49,6 +49,8 @@ class SingleBot:
         self.kill_switch_active = False
 
         self.day_pnl = 0.0
+        self.day_peak_pnl = 0.0
+        self.day_trough_pnl = 0.0
         self.trade_count = 0
         self.win_count = 0
         self.loss_count = 0
@@ -61,6 +63,8 @@ class SingleBot:
         self._last_sim_exit_dt: Optional[datetime] = None
         self._sim_day_date: Optional[str] = None
         self._sim_day_pnl: float = 0.0
+        self._sim_day_peak_pnl: float = 0.0
+        self._sim_day_trough_pnl: float = 0.0
         self._sim_day_trades: int = 0
 
         # Individual per-bot script runtime controls (ON = run worker, OFF = terminated)
@@ -303,6 +307,14 @@ class SingleBot:
                 if chand_sl > trade["trailing_sl"]:
                     trade["trailing_sl"] = chand_sl
 
+            cur_dt = (ctx.get("sim_dt") if is_sim and ctx.get("sim_dt") else now_dt)
+            elapsed_min = max(0.0, (cur_dt.timestamp() - float(trade.get("entered_epoch") or cur_dt.timestamp())) / 60.0)
+            stag_min = cfg.get("stagnation_tighten_minutes")
+            if stag_min is not None and elapsed_min >= float(stag_min) and peak_ret < float(cfg.get("stagnation_mfe_max", 0.03)):
+                stag_sl = round(entry_p * (1.0 - float(cfg.get("stagnation_stop_fraction", 0.03))), 2)
+                if stag_sl > trade["trailing_sl"]:
+                    trade["trailing_sl"] = stag_sl
+
             if self.bot_id == "live_trading_bot":
                 if ret >= cfg.get("breakeven_trigger", 0.05) and trade["trailing_sl"] < entry_p:
                     trade["trailing_sl"] = entry_p
@@ -323,6 +335,22 @@ class SingleBot:
                 exit_reason = "EOD_SQUAREOFF"
             elif is_sim and ctx.get("sim_date") and now_clock >= "15:15:00":
                 exit_reason = "REPLAY_EOD_SQUAREOFF"
+            elif (
+                cfg.get("profit_ratchet_enabled")
+                and cfg.get("profit_ratchet_hard_exit")
+                and elapsed_min >= float(cfg.get("profit_ratchet_min_hold_minutes", 0.0))
+            ):
+                eff_peak_pnl = self._sim_day_peak_pnl if is_sim else self.day_peak_pnl
+                eff_base_pnl = self._sim_day_pnl if is_sim else self.day_pnl
+                if eff_peak_pnl >= float(cfg.get("profit_ratchet_activate", 1400.0)):
+                    r_floor = max(
+                        float(cfg.get("profit_ratchet_min_floor", 300.0)),
+                        eff_peak_pnl * float(cfg.get("profit_ratchet_keep_frac", 0.5)),
+                    )
+                    if (eff_base_pnl + gross_pnl - ROUND_TRIP_CHARGES) <= r_floor:
+                        exit_reason = "PROFIT_RATCHET_EXIT"
+            elif cfg.get("max_hold_minutes") is not None and elapsed_min >= float(cfg["max_hold_minutes"]):
+                exit_reason = "MAX_HOLD_TIME"
 
             if exit_reason:
                 sim_dt = ctx.get("sim_dt")
@@ -331,6 +359,8 @@ class SingleBot:
                 ex = self.force_exit_trade(exit_reason, exit_time=ctx.get("sim_clock_full") or now_clock)
                 if is_sim and ex is not None:
                     self._sim_day_pnl = round(self._sim_day_pnl + float(ex.get("net_pnl", 0.0)), 2)
+                    self._sim_day_peak_pnl = round(max(self._sim_day_peak_pnl, self._sim_day_pnl), 2)
+                    self._sim_day_trough_pnl = round(min(self._sim_day_trough_pnl, self._sim_day_pnl), 2)
                 return True
             self.status = "IN_TRADE"
             return False
@@ -344,13 +374,56 @@ class SingleBot:
             if self._sim_day_date != s_date:
                 self._sim_day_date = s_date
                 self._sim_day_pnl = 0.0
+                self._sim_day_peak_pnl = 0.0
+                self._sim_day_trough_pnl = 0.0
                 self._sim_day_trades = 0
 
         regime_tier, eff_cfg = self._resolve_cfg(vix)
         eff_day_pnl = self._sim_day_pnl if is_sim else self.day_pnl
+        eff_day_peak = self._sim_day_peak_pnl if is_sim else self.day_peak_pnl
+        eff_day_trough = self._sim_day_trough_pnl if is_sim else self.day_trough_pnl
         eff_day_trades = self._sim_day_trades if is_sim else self.trade_count
 
-        # 2. Check Daily Risk / Profit Locks
+        # 2. Check Daily Risk / Profit / Omega Ratchet Locks
+        if (
+            eff_cfg.get("recovered_day_lock")
+            and eff_day_trough <= -float(eff_cfg.get("recovered_day_trough_min", 100.0))
+            and eff_day_pnl >= float(eff_cfg.get("recovered_day_min_pnl", 150.0))
+        ):
+            self.status = "DAILY_LOCK"
+            self.radar = {
+                "targeted_option": f"NIFTY {atm_strike} CE",
+                "expiry": active_expiry,
+                "expiry_label": expiry_label,
+                "expiry_dte": expiry_dte,
+                "target_delta": eff_cfg.get("target_delta", 0.60),
+                "estimated_premium": ce_price,
+                "status": "Recovered Green Day Locked",
+                "checklist": self.radar.get("checklist", []),
+                "notes": f"Reclaimed green session locked: +Rs {eff_day_pnl:,.2f} (trough Rs {eff_day_trough:,.2f}).",
+            }
+            return False
+
+        if eff_cfg.get("profit_ratchet_enabled") and eff_day_peak >= float(eff_cfg.get("profit_ratchet_activate", 1400.0)):
+            r_floor = max(
+                float(eff_cfg.get("profit_ratchet_min_floor", 300.0)),
+                eff_day_peak * float(eff_cfg.get("profit_ratchet_keep_frac", 0.5)),
+            )
+            if eff_day_pnl <= r_floor:
+                self.status = "DAILY_LOCK"
+                self.radar = {
+                    "targeted_option": f"NIFTY {atm_strike} CE",
+                    "expiry": active_expiry,
+                    "expiry_label": expiry_label,
+                    "expiry_dte": expiry_dte,
+                    "target_delta": eff_cfg.get("target_delta", 0.60),
+                    "estimated_premium": ce_price,
+                    "status": "Profit Ratchet Floor Locked",
+                    "checklist": self.radar.get("checklist", []),
+                    "notes": f"Realized PnL Rs {eff_day_pnl:,.2f} protected at floor Rs {r_floor:,.2f} (peak Rs {eff_day_peak:,.2f}).",
+                }
+                return False
+
         if eff_day_pnl >= eff_cfg.get("daily_profit_lock", 2500.0):
             self.status = "DAILY_LOCK"
             self.radar = {
@@ -455,6 +528,13 @@ class SingleBot:
 
         # 4. Trigger New Entry if All Criteria Met
         signal_dir = 1 if bullish_signal else (-1 if bearish_signal else 0)
+        hhmm = now_clock[:5]
+        start_clk = eff_cfg.get("entry_start_clock")
+        end_clk = eff_cfg.get("entry_end_clock")
+        if start_clk and hhmm < str(start_clk):
+            signal_dir = 0
+        if end_clk and hhmm > str(end_clk):
+            signal_dir = 0
         if signal_dir != 0 and not (is_sim and ctx.get("sim_date") and now_clock >= "15:10:00"):
             if is_sim:
                 sim_dt = ctx.get("sim_dt")
@@ -483,6 +563,7 @@ class SingleBot:
             self.trade_count += 1
             if is_sim:
                 self._sim_day_trades += 1
+            entry_dt = ctx.get("sim_dt") if is_sim and ctx.get("sim_dt") else now_dt
             entered_lbl = ctx.get("sim_clock_full") if is_sim else now_clock
             self.current_trade = {
                 "trade_id": f"T{self.trade_count}_{now_clock.replace(':', '')}",
@@ -495,6 +576,7 @@ class SingleBot:
                 "regime_tier": regime_tier,
                 "pricing_source": "upstox_chain" if used_chain else "bs",
                 "bs_t_exp": t_exp,
+                "entered_epoch": entry_dt.timestamp(),
                 "lots": lots,
                 "qty": qty,
                 "entry_price": entry_p,
@@ -535,6 +617,8 @@ class SingleBot:
         t["gross_pnl"] = round(gross, 2)
         
         self.day_pnl = round(self.day_pnl + net, 2)
+        self.day_peak_pnl = round(max(self.day_peak_pnl, self.day_pnl), 2)
+        self.day_trough_pnl = round(min(self.day_trough_pnl, self.day_pnl), 2)
         self.wallet = round(self.wallet + net, 2)
         if net >= 0:
             self.win_count += 1
@@ -717,6 +801,8 @@ class BotEngineHub:
                         "wallet": bot.wallet,
                         "initial_wallet": bot.initial_wallet,
                         "day_pnl": bot.day_pnl,
+                        "day_peak_pnl": bot.day_peak_pnl,
+                        "day_trough_pnl": bot.day_trough_pnl,
                         "trade_count": bot.trade_count,
                         "win_count": bot.win_count,
                         "loss_count": bot.loss_count,
@@ -751,6 +837,8 @@ class BotEngineHub:
             self.day_events = data.get("day_events", [])
             saved_bots = data.get("bots", {})
             for b_id, sb in saved_bots.items():
+                if b_id == "champion_of_50":
+                    continue
                 if b_id not in self.bots and isinstance(sb, dict) and sb.get("cfg"):
                     self.bots[b_id] = SingleBot(
                         b_id,
@@ -768,6 +856,8 @@ class BotEngineHub:
                 bot.wallet = float(sb.get("wallet", self.initial_wallet))
                 bot.initial_wallet = float(sb.get("initial_wallet", self.initial_wallet))
                 bot.day_pnl = float(sb.get("day_pnl", 0.0))
+                bot.day_peak_pnl = float(sb.get("day_peak_pnl", max(0.0, bot.day_pnl)))
+                bot.day_trough_pnl = float(sb.get("day_trough_pnl", min(0.0, bot.day_pnl)))
                 bot.trade_count = int(sb.get("trade_count", 0))
                 bot.win_count = int(sb.get("win_count", 0))
                 bot.loss_count = int(sb.get("loss_count", 0))
@@ -892,8 +982,8 @@ class BotEngineHub:
             "live_trading_bot", "Live Trading Bot", "Gravitas Capital Shield", cfg_live_bot, self.initial_wallet, auto_start=False
         )
 
-        # 6. Champion of 50 (Apex OmniTitan X - AllWeather_Hybrid, config_50k.json)
-        cfg_champion_50 = {
+        # 6. Champion Omega (Apex Omega Prime, engine_version 0.4-omega, champion_omega/config_50k.json)
+        cfg_champion_omega = {
             "capital_floor": 30000.0,
             "daily_profit_lock": 3500.0,
             "daily_loss_limit": 4000.0,
@@ -906,6 +996,9 @@ class BotEngineHub:
             "trail_fraction": 0.045,
             "breakeven_activation_fraction": 0.06,
             "breakeven_lock_fraction": 0.025,
+            "entry_start_clock": "09:20",
+            "entry_end_clock": "14:35",
+            "max_hold_minutes": 55,
             "step_trail_levels": [
                 [0.085, 0.035],
                 [0.145, 0.090],
@@ -921,24 +1014,40 @@ class BotEngineHub:
                     "max_lots": 2,
                     "max_trades_day": 1,
                     "daily_profit_lock": 2000.0,
+                    "entry_end_clock": "13:30",
+                    "max_hold_minutes": 35,
                     "stop_fraction": 0.075,
                     "target_fraction": 0.145,
                     "breakeven_activation_fraction": 0.045,
                     "breakeven_lock_fraction": 0.025,
                     "trail_activation": 0.065,
                     "trail_fraction": 0.028,
+                    "stagnation_tighten_minutes": 22.0,
+                    "stagnation_mfe_max": 0.03,
+                    "stagnation_stop_fraction": 0.03,
                     "step_trail_levels": [[0.085, 0.035], [0.15, 0.090], [0.22, 0.150], [0.28, 0.215]],
                 },
                 "mid": {
                     "max_lots": 8,
                     "max_trades_day": 4,
-                    "daily_profit_lock": 5000.0,
+                    "daily_profit_lock": 4200.0,
+                    "entry_end_clock": "14:00",
+                    "max_hold_minutes": 65,
                     "stop_fraction": 0.095,
                     "target_fraction": 0.55,
                     "breakeven_activation_fraction": 0.065,
                     "breakeven_lock_fraction": 0.028,
                     "trail_activation": 0.13,
                     "trail_fraction": 0.052,
+                    "recovered_day_lock": True,
+                    "recovered_day_min_pnl": 150.0,
+                    "recovered_day_trough_min": 100.0,
+                    "profit_ratchet_enabled": True,
+                    "profit_ratchet_activate": 1600.0,
+                    "profit_ratchet_keep_frac": 0.60,
+                    "profit_ratchet_min_floor": 350.0,
+                    "profit_ratchet_hard_exit": True,
+                    "profit_ratchet_min_hold_minutes": 2.5,
                     "step_trail_levels": [
                         [0.085, 0.035], [0.15, 0.090], [0.22, 0.150],
                         [0.28, 0.215], [0.36, 0.290], [0.45, 0.380], [0.54, 0.460],
@@ -947,13 +1056,24 @@ class BotEngineHub:
                 "high": {
                     "max_lots": 4,
                     "max_trades_day": 4,
-                    "daily_profit_lock": 5500.0,
+                    "daily_profit_lock": 4200.0,
+                    "entry_end_clock": "14:00",
+                    "max_hold_minutes": 60,
                     "stop_fraction": 0.095,
                     "target_fraction": 0.55,
                     "breakeven_activation_fraction": 0.065,
                     "breakeven_lock_fraction": 0.028,
                     "trail_activation": 0.13,
                     "trail_fraction": 0.048,
+                    "recovered_day_lock": True,
+                    "recovered_day_min_pnl": 150.0,
+                    "recovered_day_trough_min": 100.0,
+                    "profit_ratchet_enabled": True,
+                    "profit_ratchet_activate": 1400.0,
+                    "profit_ratchet_keep_frac": 0.45,
+                    "profit_ratchet_min_floor": 300.0,
+                    "profit_ratchet_hard_exit": True,
+                    "profit_ratchet_min_hold_minutes": 4.5,
                     "step_trail_levels": [
                         [0.085, 0.035], [0.15, 0.090], [0.22, 0.150],
                         [0.28, 0.215], [0.36, 0.290], [0.45, 0.380], [0.54, 0.460],
@@ -963,17 +1083,28 @@ class BotEngineHub:
                     "max_lots": 2,
                     "daily_loss_limit": 2400.0,
                     "daily_profit_lock": 2100.0,
+                    "entry_start_clock": "09:32",
+                    "entry_end_clock": "14:00",
+                    "max_hold_minutes": 40,
                     "target_delta": 0.60,
                     "stop_fraction": 0.10,
                     "target_fraction": 0.32,
                     "breakeven_activation_fraction": None,
                     "trail_activation": None,
+                    "recovered_day_lock": True,
+                    "recovered_day_min_pnl": 150.0,
+                    "recovered_day_trough_min": 100.0,
+                    "profit_ratchet_enabled": True,
+                    "profit_ratchet_activate": 1000.0,
+                    "profit_ratchet_keep_frac": 0.60,
+                    "profit_ratchet_min_floor": 300.0,
+                    "profit_ratchet_hard_exit": False,
                     "step_trail_levels": [[0.10, 0.0], [0.16, 0.08], [0.22, 0.14], [0.28, 0.22]],
                 },
             },
         }
-        self.bots["champion_of_50"] = SingleBot(
-            "champion_of_50", "Champion of 50", "Apex OmniTitan X [Hybrid]", cfg_champion_50, self.initial_wallet, auto_start=False
+        self.bots["champion_omega"] = SingleBot(
+            "champion_omega", "Champion Omega", "Apex Omega Prime [0.4-omega]", cfg_champion_omega, self.initial_wallet, auto_start=False
         )
 
     def _load_dropin_bots(self):
@@ -1101,6 +1232,8 @@ class BotEngineHub:
             bot.wallet = self.initial_wallet
             bot.initial_wallet = self.initial_wallet
             bot.day_pnl = 0.0
+            bot.day_peak_pnl = 0.0
+            bot.day_trough_pnl = 0.0
             bot.trade_count = 0
             bot.win_count = 0
             bot.loss_count = 0
@@ -1111,6 +1244,8 @@ class BotEngineHub:
             bot._last_sim_exit_dt = None
             bot._sim_day_date = None
             bot._sim_day_pnl = 0.0
+            bot._sim_day_peak_pnl = 0.0
+            bot._sim_day_trough_pnl = 0.0
             bot._sim_day_trades = 0
             bot.status = "SCANNING" if (not preserve_enabled or bot.enabled) else "STOPPED"
         if not preserve_enabled or bot.enabled:
@@ -1166,6 +1301,8 @@ class BotEngineHub:
                             "wallet": bot.wallet,
                             "initial_wallet": bot.initial_wallet,
                             "day_pnl": bot.day_pnl,
+                            "day_peak_pnl": bot.day_peak_pnl,
+                            "day_trough_pnl": bot.day_trough_pnl,
                             "trade_count": bot.trade_count,
                             "win_count": bot.win_count,
                             "loss_count": bot.loss_count,
@@ -1207,6 +1344,8 @@ class BotEngineHub:
                         bot.wallet = float(sb.get("wallet", self.initial_wallet))
                         bot.initial_wallet = float(sb.get("initial_wallet", self.initial_wallet))
                         bot.day_pnl = float(sb.get("day_pnl", 0.0))
+                        bot.day_peak_pnl = float(sb.get("day_peak_pnl", max(0.0, bot.day_pnl)))
+                        bot.day_trough_pnl = float(sb.get("day_trough_pnl", min(0.0, bot.day_pnl)))
                         bot.trade_count = int(sb.get("trade_count", 0))
                         bot.win_count = int(sb.get("win_count", 0))
                         bot.loss_count = int(sb.get("loss_count", 0))
@@ -1216,6 +1355,8 @@ class BotEngineHub:
                         bot.reset_history = copy.deepcopy(sb.get("reset_history", []))
                         bot._sim_day_date = None
                         bot._sim_day_pnl = 0.0
+                        bot._sim_day_peak_pnl = 0.0
+                        bot._sim_day_trough_pnl = 0.0
                         bot._sim_day_trades = 0
                     if bot.enabled:
                         bot.start()

@@ -11,7 +11,7 @@ A real-time multi-bot Nifty 50 options paper-trading arena powered by Upstox Web
 | 3 | `chad_25` | **Chad 25** | `Chandelier Compounding 4L` |
 | 4 | `chandler_runer` | **Chandler Runner** | `Chandelier Wide-Target` |
 | 5 | `live_trading_bot` | **Live Trading Bot** | `Gravitas Capital Shield` |
-| 6 | `champion_of_50` | **Champion of 50** | `Apex OmniTitan X [Hybrid]` (VIX-tier adaptive) |
+| 6 | `champion_omega` | **Champion Omega** | `Apex Omega Prime [0.4-omega]` (VIX-tier + Profit Ratchet) |
 
 ## Key Features
 

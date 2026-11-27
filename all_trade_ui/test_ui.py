@@ -85,7 +85,7 @@ class TestAllTradeUI(unittest.TestCase):
 
     def test_02_five_bots_initialized(self):
         """Verify all 6 arena bots are loaded with exact required initial states."""
-        expected_bots = ["winner_51", "bot_51_1", "chad_25", "chandler_runer", "live_trading_bot", "champion_of_50"]
+        expected_bots = ["winner_51", "bot_51_1", "chad_25", "chandler_runer", "live_trading_bot", "champion_omega"]
         state = self.hub.get_state(self.feed.get_snapshot())
         bots = state.get("bots", {})
         
@@ -739,14 +739,32 @@ class TestAllTradeUI(unittest.TestCase):
             html = (Path(__file__).resolve().parent / "templates" / "index.html").read_text()
             self.assertIn("scheduleUIUpdate", html)
             self.assertIn("_lastChecklistSig", html)
-            self.assertIn("champion_of_50", html)
+            self.assertIn("champion_omega", html)
+            self.assertNotIn("champion_of_50", html)
+            self.assertNotIn("champion_of_50", hub.bots)
 
-            c50 = hub.bots["champion_of_50"]
-            tier_h, cfg_h = c50._resolve_cfg(17.2)
+            omega = hub.bots["champion_omega"]
+            tier_h, cfg_h = omega._resolve_cfg(17.2)
             self.assertEqual(tier_h, "high")
             self.assertEqual(cfg_h["trail_fraction"], 0.048)
-            self.assertEqual(cfg_h["daily_profit_lock"], 5500.0)
-            print("✓ Zero-Stall WS Recovery Flags, SSE Keepalive, rAF/DOM Diffing & Champion of 50 Verified.")
+            self.assertEqual(cfg_h["daily_profit_lock"], 4200.0)
+            self.assertEqual(cfg_h["profit_ratchet_activate"], 1400.0)
+            tier_c, cfg_c = omega._resolve_cfg(21.0)
+            self.assertEqual(tier_c, "crisis")
+            self.assertEqual(cfg_c["entry_start_clock"], "09:32")
+
+            omega.day_trough_pnl = -450.0
+            omega.day_pnl = 220.0
+            omega.process_market_tick({
+                "spot": 25000.0, "vix": 17.2, "feats": {}, "is_open": True, "is_sim": False,
+                "market_status": "NORMAL_OPEN", "active_expiry": "2026-12-01",
+                "expiry_label": "01 DEC 26", "expiry_dte": 4,
+                "now_dt": omega.last_exit_time or __import__("datetime").datetime.now(),
+                "now_clock": "11:05:00", "atm_strike": 25000, "t_exp": 0.01,
+                "chain": {}, "ce_price": 180.0, "ce_delta": 0.55, "pe_price": 170.0, "pe_delta": -0.45,
+            })
+            self.assertEqual(omega.status, "DAILY_LOCK")
+            print("✓ Zero-Stall WS Recovery, SSE Keepalive, DOM Diffing & Champion Omega [0.4-omega] Verified.")
         finally:
             broadcaster.stop()
             hub.shutdown()
